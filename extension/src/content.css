@@ -1,0 +1,5 @@
+/* Styles for Note Taker Plus content script */
+
+#notetaker-toast {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
