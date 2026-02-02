@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     # API Key for authentication (simple auth for single user)
     api_key: str = "change-me-in-production"
 
+    # CORS origins (comma-separated for production)
+    cors_origins: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173"
+
     # Raindrop.io integration
     raindrop_token: str = ""
     raindrop_poll_interval_seconds: int = 300  # 5 minutes
