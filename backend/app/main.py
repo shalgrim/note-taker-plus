@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import settings
 from app.database import engine, Base
 from app.routers import (
     sources_router,
@@ -36,13 +37,11 @@ app = FastAPI(
 )
 
 # CORS middleware for frontend
+# Origins can be configured via CORS_ORIGINS env var (comma-separated)
+cors_origins = [origin.strip() for origin in settings.cors_origins.split(",")]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Local React dev
-        "http://localhost:5173",  # Vite dev server
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
