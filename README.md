@@ -118,6 +118,9 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/notetaker
 # API Key (generate a random string)
 API_KEY=your-secret-api-key-here
 
+# CORS allowed origins (comma-separated, add your frontend URL for production)
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://127.0.0.1:5173
+
 # Raindrop.io (get from https://app.raindrop.io/settings/integrations)
 RAINDROP_TOKEN=your-raindrop-token
 
@@ -197,25 +200,24 @@ See full API docs at http://localhost:8000/docs
 
 ## Deployment
 
-### Railway/Render
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions on deploying to Railway or Render.
 
-1. Create a new project
+**Quick overview:**
+1. Create a new project on Railway
 2. Add a PostgreSQL database
-3. Deploy the `backend` folder
-4. Set environment variables
+3. Deploy the `backend` folder (Railpack auto-detects FastAPI via `pyproject.toml`)
+4. Set environment variables (DATABASE_URL, API_KEY, CORS_ORIGINS)
 5. Deploy the `frontend` folder with `VITE_API_URL` pointing to your backend
 
-### Docker (coming soon)
-
-```bash
-docker-compose up -d
-```
+**Note:** Card generation requires Ollama, which runs locally. Capture sources from anywhere, generate cards on your Mac, quiz from anywhere.
 
 ## Project Structure
 
 ```
 note-taker-plus/
 ├── backend/
+│   ├── main.py          # Entry point (wrapper for Railpack)
+│   ├── pyproject.toml   # Dependencies and build config
 │   ├── app/
 │   │   ├── models/      # SQLAlchemy models
 │   │   ├── routers/     # API endpoints
