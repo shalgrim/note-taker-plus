@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useStore } from '../hooks/useStore';
-import { healthApi, syncApi } from '../services/api';
+import { healthApi } from '../services/api';
 
 export default function SettingsPage() {
   const { apiKey, setApiKey, showHints, setShowHints } = useStore();
