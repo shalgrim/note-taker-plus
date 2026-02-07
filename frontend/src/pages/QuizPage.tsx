@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cardsApi, tagsApi } from '../services/api';
 import { useStore } from '../hooks/useStore';
-import type { Card, ReviewRating } from '../types';
+import type { ReviewRating } from '../types';
 import clsx from 'clsx';
 
 const ratingLabels: Record<ReviewRating, { label: string; color: string; key: string }> = {
