@@ -42,5 +42,9 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
+  },
+  preview: {
+    host: true,
+    allowedHosts: ['localhost', '.railway.app']
   }
 })
