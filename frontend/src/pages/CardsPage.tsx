@@ -23,6 +23,7 @@ export default function CardsPage() {
   const [filterStatus, setFilterStatus] = useState<CardStatus | ''>('');
   const [filterTag, setFilterTag] = useState('');
   const [editingCard, setEditingCard] = useState<Card | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Fetch cards
   const { data, isLoading } = useQuery({
@@ -65,7 +66,15 @@ export default function CardsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Cards</h1>
-        <p className="text-gray-400">{data?.total || 0} total cards</p>
+        <div className="flex items-center gap-4">
+          <p className="text-gray-400">{data?.total || 0} total cards</p>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors"
+          >
+            + New Card
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -130,6 +139,11 @@ export default function CardsPage() {
           card={editingCard}
           onClose={() => setEditingCard(null)}
         />
+      )}
+
+      {/* Create Modal */}
+      {showCreateModal && (
+        <CreateCardModal onClose={() => setShowCreateModal(false)} />
       )}
     </div>
   );
@@ -336,6 +350,109 @@ function EditCardModal({ card, onClose }: { card: Card; onClose: () => void }) {
               className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white px-4 py-2 rounded-md transition-colors"
             >
               {updateMutation.isPending ? 'Saving...' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function CreateCardModal({ onClose }: { onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const [front, setFront] = useState('');
+  const [back, setBack] = useState('');
+  const [hint, setHint] = useState('');
+  const [tags, setTags] = useState('');
+
+  const createMutation = useMutation({
+    mutationFn: () =>
+      cardsApi.create({
+        front,
+        back,
+        hint: hint || undefined,
+        tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      onClose();
+    },
+  });
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-gray-800 rounded-lg p-6 max-w-lg w-full">
+        <h2 className="text-lg font-semibold text-white mb-4">Create Card</h2>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            createMutation.mutate();
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <label className="block text-sm text-gray-300 mb-1">Front (Question) *</label>
+            <textarea
+              value={front}
+              onChange={(e) => setFront(e.target.value)}
+              required
+              rows={3}
+              placeholder="What do you want to remember?"
+              className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-300 mb-1">Back (Answer) *</label>
+            <textarea
+              value={back}
+              onChange={(e) => setBack(e.target.value)}
+              required
+              rows={3}
+              placeholder="The answer or explanation"
+              className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-300 mb-1">Hint (optional)</label>
+            <input
+              type="text"
+              value={hint}
+              onChange={(e) => setHint(e.target.value)}
+              placeholder="A hint to help recall"
+              className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm text-gray-300 mb-1">
+              Tags (comma-separated)
+            </label>
+            <input
+              type="text"
+              value={tags}
+              onChange={(e) => setTags(e.target.value)}
+              placeholder="python, programming, basics"
+              className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white placeholder-gray-400"
+            />
+          </div>
+
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={createMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 text-white px-4 py-2 rounded-md transition-colors"
+            >
+              {createMutation.isPending ? 'Creating...' : 'Create Card'}
             </button>
           </div>
         </form>
