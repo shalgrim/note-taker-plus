@@ -134,7 +134,12 @@ async def create_card(card_in: CardCreate, db: AsyncSession = Depends(get_db)):
 
     db.add(card)
     await db.commit()
-    await db.refresh(card)
+
+    # Re-query with tags loaded to avoid lazy loading issues
+    result = await db.execute(
+        select(Card).where(Card.id == card.id).options(selectinload(Card.tags))
+    )
+    card = result.scalar_one()
 
     return CardResponse.model_validate(card)
 
