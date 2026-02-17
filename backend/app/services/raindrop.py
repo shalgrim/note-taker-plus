@@ -2,7 +2,7 @@
 Raindrop.io Integration Service.
 
 Fetches highlights from Raindrop.io API and creates sources from them.
-Orange highlights trigger flashcard generation.
+Blue highlights trigger flashcard generation.
 """
 
 import httpx
@@ -16,7 +16,7 @@ class RaindropService:
     BASE_URL = "https://api.raindrop.io/rest/v1"
 
     # Highlight color that triggers flashcard generation
-    FLASHCARD_COLOR = "orange"
+    FLASHCARD_COLOR = "blue"
 
     def __init__(self, token: Optional[str] = None):
         self.token = token or settings.raindrop_token
@@ -89,7 +89,7 @@ class RaindropService:
         }
 
     def should_generate_cards(self, highlight: dict) -> bool:
-        """Check if a highlight should trigger card generation (orange color)."""
+        """Check if a highlight should trigger card generation (blue color)."""
         return highlight.get("color", "").lower() == self.FLASHCARD_COLOR
 
     async def sync_highlights(
@@ -99,7 +99,7 @@ class RaindropService:
         Sync highlights from Raindrop.
 
         Returns (all_highlights, flashcard_highlights) where flashcard_highlights
-        are the orange ones that should generate cards.
+        are the blue ones that should generate cards.
         """
         all_highlights = []
         flashcard_highlights = []
