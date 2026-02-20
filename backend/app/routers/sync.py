@@ -28,7 +28,7 @@ async def sync_raindrop(
 
     Args:
         since: Only sync highlights created after this datetime
-        auto_generate: If True, automatically generate cards for orange highlights
+        auto_generate: If True, automatically generate cards for blue highlights
     """
     service = RaindropService()
 
