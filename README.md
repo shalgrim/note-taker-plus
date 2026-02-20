@@ -5,7 +5,7 @@ A spaced repetition learning system with multiple input sources. Capture knowled
 ## Features
 
 - **Multiple Input Sources**
-  - Raindrop.io integration (orange highlights → flashcards)
+  - Raindrop.io integration (blue highlights → flashcards)
   - Chrome extension for quick capture
   - Manual entry via web UI
   - (Planned) Alfred workflow, iOS Shortcuts
@@ -138,7 +138,7 @@ OBSIDIAN_LEARNINGS_FOLDER=learnings
 1. Go to [Raindrop.io Settings → Integrations](https://app.raindrop.io/settings/integrations)
 2. Create a new app or use "Test Token"
 3. Copy the token to your `.env` file
-4. Use **orange highlights** in Raindrop to mark content for flashcard generation
+4. Use **blue highlights** in Raindrop to mark content for flashcard generation
 
 ### Chrome Extension
 
@@ -157,7 +157,7 @@ OBSIDIAN_LEARNINGS_FOLDER=learnings
 
 ### 1. Capture Knowledge
 
-- **Reading articles**: Use Raindrop.io with orange highlights
+- **Reading articles**: Use Raindrop.io with blue highlights
 - **Browsing**: Use Chrome extension to capture selections
 - **Manual**: Add sources directly in the web UI
 

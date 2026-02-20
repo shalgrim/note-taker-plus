@@ -32,7 +32,7 @@
 │                        INPUT SOURCES                             │
 ├──────────────┬──────────────┬──────────────┬───────────────────┤
 │ Chrome Ext   │ Raindrop.io  │ Web UI       │ (Future: Alfred,  │
-│ (highlight)  │ (orange=card)│ (manual)     │  iOS Shortcuts)   │
+│ (highlight)  │ (blue=card)  │ (manual)     │  iOS Shortcuts)   │
 └──────┬───────┴──────┬───────┴──────┬───────┴───────────────────┘
        │              │              │
        ▼              ▼              ▼
@@ -59,7 +59,7 @@
 - [x] Card model (flashcards) with CRUD
 - [x] Tag model with many-to-many relationships
 - [x] Spaced repetition service (SM-2 algorithm)
-- [x] Raindrop.io sync service (fetches highlights, orange = flashcard)
+- [x] Raindrop.io sync service (fetches highlights, blue = flashcard)
 - [x] Ollama integration for card generation
 - [x] Obsidian export service (markdown files)
 - [x] Simple API key authentication
