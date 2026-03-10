@@ -1,12 +1,12 @@
 """Tags API endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import verify_api_key
 from app.database import get_db
-from app.models.tag import Tag, source_tags, card_tags
+from app.models.tag import Tag, card_tags, source_tags
 from app.schemas.tag import TagCreate, TagResponse
 
 router = APIRouter(prefix="/tags", tags=["tags"], dependencies=[Depends(verify_api_key)])

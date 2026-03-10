@@ -1,7 +1,8 @@
 from datetime import datetime
-from pydantic import BaseModel, HttpUrl
 
-from app.models.source import SourceType, SourceStatus
+from pydantic import BaseModel
+
+from app.models.source import SourceStatus, SourceType
 from app.schemas.tag import TagResponse
 
 
