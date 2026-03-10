@@ -174,7 +174,7 @@ export default function QuizPage() {
         <div className="bg-gray-800 rounded-lg overflow-hidden">
           {/* Question */}
           <div className="p-8">
-            <p className="text-xl text-white text-center">{currentCard.front}</p>
+            <p className="text-xl text-white text-center whitespace-pre-wrap">{currentCard.front}</p>
             {showHints && currentCard.hint && !showAnswer && (
               <p className="text-gray-400 text-center mt-4 italic">
                 Hint: {currentCard.hint}
@@ -186,7 +186,7 @@ export default function QuizPage() {
           {showAnswer ? (
             <>
               <div className="border-t border-gray-700 p-8 bg-gray-750">
-                <p className="text-xl text-green-400 text-center">{currentCard.back}</p>
+                <p className="text-xl text-green-400 text-center whitespace-pre-wrap">{currentCard.back}</p>
               </div>
 
               {/* Rating buttons */}
