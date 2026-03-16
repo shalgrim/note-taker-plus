@@ -21,8 +21,9 @@ SM-2 (SuperMemo 2) is the algorithm behind Anki. Here's a simplified version:
 """
 
 from datetime import datetime, timedelta
+
 from app.models.card import Card
-from app.models.review_log import ReviewRating, ReviewLog
+from app.models.review_log import ReviewLog, ReviewRating
 
 
 class SpacedRepetitionService:

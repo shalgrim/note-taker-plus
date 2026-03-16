@@ -1,5 +1,6 @@
 from datetime import datetime
-from sqlalchemy import Column, ForeignKey, Table, String, DateTime, Integer
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -32,9 +33,7 @@ class Tag(Base):
     sources: Mapped[list["Source"]] = relationship(
         "Source", secondary=source_tags, back_populates="tags"
     )
-    cards: Mapped[list["Card"]] = relationship(
-        "Card", secondary=card_tags, back_populates="tags"
-    )
+    cards: Mapped[list["Card"]] = relationship("Card", secondary=card_tags, back_populates="tags")
 
     def __repr__(self) -> str:
         return f"<Tag(id={self.id}, name='{self.name}')>"

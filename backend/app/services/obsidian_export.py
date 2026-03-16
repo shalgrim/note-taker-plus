@@ -6,7 +6,6 @@ This allows for viewing and searching learnings in Obsidian, and also
 provides a git-friendly backup of the data.
 """
 
-import os
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -16,8 +15,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.config import settings
-from app.models.source import Source, SourceStatus
 from app.models.card import Card, CardStatus
+from app.models.source import Source, SourceStatus
 
 
 class ObsidianExportService:
@@ -35,21 +34,21 @@ class ObsidianExportService:
         """Create a safe filename from text."""
         # Remove/replace problematic characters
         slug = text.lower()
-        for char in ['/', '\\', ':', '*', '?', '"', '<', '>', '|', '#', '[', ']']:
-            slug = slug.replace(char, '-')
+        for char in ["/", "\\", ":", "*", "?", '"', "<", ">", "|", "#", "[", "]"]:
+            slug = slug.replace(char, "-")
         # Collapse multiple dashes
-        while '--' in slug:
-            slug = slug.replace('--', '-')
+        while "--" in slug:
+            slug = slug.replace("--", "-")
         # Trim and limit length
-        slug = slug.strip('-')[:max_length].strip('-')
-        return slug or 'untitled'
+        slug = slug.strip("-")[:max_length].strip("-")
+        return slug or "untitled"
 
     def _format_source_markdown(self, source: Source) -> str:
         """Format a source as Obsidian-compatible markdown."""
         lines = [
             "---",
             f"id: {source.id}",
-            f"type: source",
+            "type: source",
             f"source_type: {source.source_type}",
             f"status: {source.status}",
             f"created: {source.created_at.isoformat()}",
@@ -61,33 +60,41 @@ class ObsidianExportService:
             lines.append(f"tags: [{', '.join(tag_names)}]")
 
         if source.source_url:
-            lines.append(f"url: \"{source.source_url}\"")
+            lines.append(f'url: "{source.source_url}"')
 
-        lines.extend([
-            "---",
-            "",
-            f"# {source.source_title or 'Source'}",
-            "",
-        ])
+        lines.extend(
+            [
+                "---",
+                "",
+                f"# {source.source_title or 'Source'}",
+                "",
+            ]
+        )
 
         if source.source_url:
             lines.append(f"[Original Source]({source.source_url})")
             lines.append("")
 
-        lines.extend([
-            "## Highlight",
-            "",
-            f"> {source.text}",
-            "",
-        ])
+        lines.extend(
+            [
+                "## Highlight",
+                "",
+                f"> {source.text}",
+                "",
+            ]
+        )
 
         if source.cards:
-            lines.extend([
-                "## Generated Cards",
-                "",
-            ])
+            lines.extend(
+                [
+                    "## Generated Cards",
+                    "",
+                ]
+            )
             for card in source.cards:
-                lines.append(f"- [[cards/{source.id}-{self._slugify(card.front[:30])}|{card.front[:50]}...]]")
+                lines.append(
+                    f"- [[cards/{source.id}-{self._slugify(card.front[:30])}|{card.front[:50]}...]]"
+                )
 
         return "\n".join(lines)
 
@@ -96,7 +103,7 @@ class ObsidianExportService:
         lines = [
             "---",
             f"id: {card.id}",
-            f"type: card",
+            "type: card",
             f"status: {card.status}",
             f"ease_factor: {card.ease_factor}",
             f"interval_days: {card.interval_days}",
@@ -114,33 +121,39 @@ class ObsidianExportService:
         if card.source_id:
             lines.append(f"source_id: {card.source_id}")
 
-        lines.extend([
-            "---",
-            "",
-            "## Question",
-            "",
-            card.front,
-            "",
-            "## Answer",
-            "",
-            card.back,
-            "",
-        ])
+        lines.extend(
+            [
+                "---",
+                "",
+                "## Question",
+                "",
+                card.front,
+                "",
+                "## Answer",
+                "",
+                card.back,
+                "",
+            ]
+        )
 
         if card.hint:
-            lines.extend([
-                "## Hint",
-                "",
-                card.hint,
-                "",
-            ])
+            lines.extend(
+                [
+                    "## Hint",
+                    "",
+                    card.hint,
+                    "",
+                ]
+            )
 
         if card.source_id:
-            lines.extend([
-                "## Source",
-                "",
-                f"![[sources/{card.source_id}]]",
-            ])
+            lines.extend(
+                [
+                    "## Source",
+                    "",
+                    f"![[sources/{card.source_id}]]",
+                ]
+            )
 
         return "\n".join(lines)
 
@@ -152,7 +165,7 @@ class ObsidianExportService:
         filepath = self.base_path / "sources" / filename
 
         content = self._format_source_markdown(source)
-        filepath.write_text(content, encoding='utf-8')
+        filepath.write_text(content, encoding="utf-8")
 
         return filepath
 
@@ -165,7 +178,7 @@ class ObsidianExportService:
         filepath = self.base_path / "cards" / filename
 
         content = self._format_card_markdown(card)
-        filepath.write_text(content, encoding='utf-8')
+        filepath.write_text(content, encoding="utf-8")
 
         return filepath
 
@@ -191,9 +204,7 @@ class ObsidianExportService:
 
         # Export active cards
         result = await db.execute(
-            select(Card)
-            .where(Card.status == CardStatus.ACTIVE)
-            .options(selectinload(Card.tags))
+            select(Card).where(Card.status == CardStatus.ACTIVE).options(selectinload(Card.tags))
         )
         cards = result.scalars().all()
 
@@ -231,11 +242,13 @@ class ObsidianExportService:
             title = source.source_title or source.text[:50]
             lines.append(f"- [[sources/{source.id}-{self._slugify(title)}|{title}]]")
 
-        lines.extend([
-            "",
-            "## Tags",
-            "",
-        ])
+        lines.extend(
+            [
+                "",
+                "## Tags",
+                "",
+            ]
+        )
 
         # Collect all tags
         all_tags = set()
@@ -250,4 +263,4 @@ class ObsidianExportService:
             lines.append(f"- #{tag}")
 
         index_path = self.base_path / "index.md"
-        index_path.write_text("\n".join(lines), encoding='utf-8')
+        index_path.write_text("\n".join(lines), encoding="utf-8")

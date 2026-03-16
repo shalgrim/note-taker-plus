@@ -20,28 +20,28 @@ def create_png(width, height, rgb_color, text_color, text):
                 row.extend(rgb_color)
             pixels.append(bytes([0] + row))  # Filter byte + row data
 
-        return b''.join(pixels)
+        return b"".join(pixels)
 
     def png_chunk(chunk_type, data):
         """Create a PNG chunk."""
         chunk = chunk_type + data
-        crc = zlib.crc32(chunk) & 0xffffffff
-        return struct.pack('>I', len(data)) + chunk + struct.pack('>I', crc)
+        crc = zlib.crc32(chunk) & 0xFFFFFFFF
+        return struct.pack(">I", len(data)) + chunk + struct.pack(">I", crc)
 
     # PNG signature
-    signature = b'\x89PNG\r\n\x1a\n'
+    signature = b"\x89PNG\r\n\x1a\n"
 
     # IHDR chunk
-    ihdr_data = struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0)
-    ihdr = png_chunk(b'IHDR', ihdr_data)
+    ihdr_data = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    ihdr = png_chunk(b"IHDR", ihdr_data)
 
     # IDAT chunk (compressed pixel data)
     pixel_data = make_pixel_data()
     compressed = zlib.compress(pixel_data, 9)
-    idat = png_chunk(b'IDAT', compressed)
+    idat = png_chunk(b"IDAT", compressed)
 
     # IEND chunk
-    iend = png_chunk(b'IEND', b'')
+    iend = png_chunk(b"IEND", b"")
 
     return signature + ihdr + idat + iend
 
@@ -54,7 +54,7 @@ def create_icon_with_pillow(size, filename):
         return False
 
     # Create image with blue background
-    img = Image.new('RGB', (size, size), color=(59, 130, 246))
+    img = Image.new("RGB", (size, size), color=(59, 130, 246))
     draw = ImageDraw.Draw(img)
 
     # Try to use a font, fall back to default
@@ -66,7 +66,9 @@ def create_icon_with_pillow(size, filename):
         font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", font_size)
     except (OSError, IOError):
         try:
-            font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+            font = ImageFont.truetype(
+                "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size
+            )
         except (OSError, IOError):
             font = ImageFont.load_default()
 
@@ -82,7 +84,7 @@ def create_icon_with_pillow(size, filename):
     draw.text((x, y), text, fill=(255, 255, 255), font=font)
 
     # Save
-    img.save(filename, 'PNG')
+    img.save(filename, "PNG")
     return True
 
 
@@ -92,20 +94,20 @@ def create_simple_icon(size, filename):
     rgb = (59, 130, 246)
     png_data = create_png(size, size, rgb, (255, 255, 255), "NT+")
 
-    with open(filename, 'wb') as f:
+    with open(filename, "wb") as f:
         f.write(png_data)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import os
 
     # Ensure icons directory exists
-    os.makedirs('icons', exist_ok=True)
+    os.makedirs("icons", exist_ok=True)
 
     sizes = [16, 48, 128]
 
     for size in sizes:
-        filename = f'icons/icon{size}.png'
+        filename = f"icons/icon{size}.png"
 
         # Try Pillow first for nicer icons with text
         if not create_icon_with_pillow(size, filename):

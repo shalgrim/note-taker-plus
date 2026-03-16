@@ -1,6 +1,7 @@
 """Sync endpoints for external integrations."""
 
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession

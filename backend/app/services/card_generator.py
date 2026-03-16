@@ -6,8 +6,9 @@ flashcards from it using a local LLM running via Ollama.
 """
 
 import json
-import httpx
 from typing import Optional
+
+import httpx
 
 from app.config import settings
 from app.models.source import Source
@@ -37,9 +38,7 @@ Output format (JSON array):
 Only output valid JSON, no other text."""
 
     @classmethod
-    async def generate_cards(
-        cls, source: Source, model: Optional[str] = None
-    ) -> list[dict]:
+    async def generate_cards(cls, source: Source, model: Optional[str] = None) -> list[dict]:
         """
         Generate flashcards from a source using Ollama.
 
@@ -53,8 +52,8 @@ Only output valid JSON, no other text."""
 {source.text}
 ---
 
-Source: {source.source_title or 'Unknown'}
-URL: {source.source_url or 'N/A'}
+Source: {source.source_title or "Unknown"}
+URL: {source.source_url or "N/A"}
 
 Generate appropriate flashcards as JSON:"""
 
@@ -161,8 +160,7 @@ Generate appropriate flashcards as JSON:"""
 
         except httpx.ConnectError:
             return False, (
-                f"Ollama not running at {settings.ollama_base_url}. "
-                "Start it with: `ollama serve`"
+                f"Ollama not running at {settings.ollama_base_url}. Start it with: `ollama serve`"
             )
         except Exception as e:
             return False, f"Error checking Ollama: {str(e)}"

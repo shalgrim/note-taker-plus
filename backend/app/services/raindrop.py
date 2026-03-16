@@ -5,9 +5,10 @@ Fetches highlights from Raindrop.io API and creates sources from them.
 Blue highlights trigger flashcard generation.
 """
 
-import httpx
 from datetime import datetime
 from typing import Optional
+
+import httpx
 
 from app.config import settings
 
@@ -24,9 +25,7 @@ class RaindropService:
     async def _request(self, method: str, endpoint: str, **kwargs) -> dict:
         """Make an authenticated request to Raindrop API."""
         if not self.token:
-            raise ValueError(
-                "Raindrop token not configured. Set RAINDROP_TOKEN in .env"
-            )
+            raise ValueError("Raindrop token not configured. Set RAINDROP_TOKEN in .env")
 
         async with httpx.AsyncClient() as client:
             response = await client.request(
@@ -57,8 +56,7 @@ class RaindropService:
                 highlights = [
                     h
                     for h in highlights
-                    if datetime.fromisoformat(h["created"].replace("Z", "+00:00"))
-                    > since
+                    if datetime.fromisoformat(h["created"].replace("Z", "+00:00")) > since
                 ]
 
             return highlights

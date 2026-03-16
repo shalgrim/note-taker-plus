@@ -1,8 +1,9 @@
 """Cards API endpoints."""
 
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, func, or_
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -12,10 +13,10 @@ from app.models.card import Card, CardStatus
 from app.models.tag import Tag
 from app.schemas.card import (
     CardCreate,
-    CardUpdate,
+    CardListResponse,
     CardResponse,
     CardReview,
-    CardListResponse,
+    CardUpdate,
     DueCardsResponse,
 )
 from app.services.spaced_repetition import SpacedRepetitionService

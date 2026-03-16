@@ -202,9 +202,9 @@ function CardItem({
         className="cursor-pointer"
         onClick={() => setShowBack(!showBack)}
       >
-        <p className="text-white font-medium">{card.front}</p>
+        <p className="text-white font-medium whitespace-pre-wrap">{card.front}</p>
         {showBack && (
-          <p className="text-gray-300 mt-2 pt-2 border-t border-gray-700">
+          <p className="text-gray-300 mt-2 pt-2 border-t border-gray-700 whitespace-pre-wrap">
             {card.back}
           </p>
         )}

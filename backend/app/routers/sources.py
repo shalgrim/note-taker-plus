@@ -1,16 +1,16 @@
 """Sources API endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.auth import verify_api_key
 from app.database import get_db
-from app.models.source import Source, SourceStatus, SourceType
 from app.models.card import Card, CardStatus
+from app.models.source import Source, SourceStatus, SourceType
 from app.models.tag import Tag
-from app.schemas.source import SourceCreate, SourceUpdate, SourceResponse, SourceListResponse
+from app.schemas.source import SourceCreate, SourceListResponse, SourceResponse, SourceUpdate
 from app.services.card_generator import CardGeneratorService
 from app.services.spaced_repetition import SpacedRepetitionService
 
@@ -88,9 +88,7 @@ async def create_source(source_in: SourceCreate, db: AsyncSession = Depends(get_
     """Create a new source (highlight/fact to learn)."""
     # Check for duplicate by external_id
     if source_in.external_id:
-        result = await db.execute(
-            select(Source).where(Source.external_id == source_in.external_id)
-        )
+        result = await db.execute(select(Source).where(Source.external_id == source_in.external_id))
         existing = result.scalar_one_or_none()
         if existing:
             raise HTTPException(
@@ -115,9 +113,7 @@ async def create_source(source_in: SourceCreate, db: AsyncSession = Depends(get_
     await db.commit()
     await db.refresh(source)
 
-    return SourceResponse(
-        **{**source.__dict__, "tags": source.tags, "card_count": 0}
-    )
+    return SourceResponse(**{**source.__dict__, "tags": source.tags, "card_count": 0})
 
 
 @router.get("/{source_id}", response_model=SourceResponse)
@@ -228,8 +224,7 @@ async def generate_cards_for_source(source_id: int, db: AsyncSession = Depends(g
         "source_id": source_id,
         "cards_generated": len(created_cards),
         "cards": [
-            {"id": c.id, "front": c.front, "back": c.back, "hint": c.hint}
-            for c in created_cards
+            {"id": c.id, "front": c.front, "back": c.back, "hint": c.hint} for c in created_cards
         ],
     }
 

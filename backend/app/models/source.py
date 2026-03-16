@@ -1,6 +1,8 @@
 from datetime import datetime
 from enum import Enum
-from sqlalchemy import String, Text, DateTime, Enum as SQLEnum
+
+from sqlalchemy import DateTime, String, Text
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -32,9 +34,7 @@ class Source(Base):
     text: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Where it came from
-    source_type: Mapped[SourceType] = mapped_column(
-        SQLEnum(SourceType), default=SourceType.MANUAL
-    )
+    source_type: Mapped[SourceType] = mapped_column(SQLEnum(SourceType), default=SourceType.MANUAL)
     source_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     source_title: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
@@ -58,9 +58,7 @@ class Source(Base):
     )
 
     # Relationships
-    tags: Mapped[list["Tag"]] = relationship(
-        "Tag", secondary=source_tags, back_populates="sources"
-    )
+    tags: Mapped[list["Tag"]] = relationship("Tag", secondary=source_tags, back_populates="sources")
     cards: Mapped[list["Card"]] = relationship(
         "Card", back_populates="source", cascade="all, delete-orphan"
     )
