@@ -111,9 +111,17 @@ async def create_source(source_in: SourceCreate, db: AsyncSession = Depends(get_
     )
     db.add(source)
     await db.commit()
-    await db.refresh(source)
 
-    return SourceResponse(**{**source.__dict__, "tags": source.tags, "card_count": 0})
+    result = await db.execute(
+        select(Source)
+        .where(Source.id == source.id)
+        .options(selectinload(Source.tags), selectinload(Source.cards))
+    )
+    source = result.scalar_one()
+
+    return SourceResponse(
+        **{**source.__dict__, "tags": source.tags, "card_count": len(source.cards)}
+    )
 
 
 @router.get("/{source_id}", response_model=SourceResponse)
