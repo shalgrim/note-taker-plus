@@ -165,7 +165,7 @@ function submitCard() {
   const q = document.getElementById('notetaker-q').value.trim();
   const a = document.getElementById('notetaker-a').value.trim();
   const hint = document.getElementById('notetaker-hint').value.trim();
-  const tags = document.getElementById('notetaker-tags').value
+  const tags = (document.getElementById('notetaker-tags')?.value || '')
     .split(',').map(t => t.trim()).filter(Boolean);
 
   if (!q) { setDialogError('Question is required'); return; }

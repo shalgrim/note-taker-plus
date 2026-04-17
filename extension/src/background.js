@@ -64,6 +64,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       text: info.selectionText,
       url: tab.url,
       title: tab.title
+    }, () => {
+      if (chrome.runtime.lastError) {
+        console.error('SHOW_CARD_DIALOG failed:', chrome.runtime.lastError.message);
+      }
     });
     return;
   }
