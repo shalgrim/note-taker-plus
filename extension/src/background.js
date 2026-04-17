@@ -13,18 +13,38 @@ chrome.runtime.onInstalled.addListener(() => {
     title: 'Create Flashcard from Selection',
     contexts: ['selection']
   });
+
+  chrome.contextMenus.create({
+    id: 'create-card-dialog',
+    title: 'Create Card...',
+    contexts: ['selection']
+  });
 });
 
 // Handle context menu clicks
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!info.selectionText) return;
 
+  // Dialog flow: send to content script immediately, settings checked there
+  if (info.menuItemId === 'create-card-dialog') {
+    chrome.tabs.sendMessage(tab.id, {
+      type: 'SHOW_CARD_DIALOG',
+      text: info.selectionText,
+      url: tab.url,
+      title: tab.title
+    });
+    return;
+  }
+
   const settings = await chrome.storage.sync.get(['apiUrl', 'apiKey']);
 
   if (!settings.apiUrl || !settings.apiKey) {
-    // Notify user to configure settings
     chrome.action.setBadgeText({ text: '!' });
     chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+    chrome.tabs.sendMessage(tab.id, {
+      type: 'SAVE_ERROR',
+      error: 'Please configure Note Taker+ settings (click the extension icon)'
+    });
     return;
   }
 
@@ -54,12 +74,23 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
     // If "Create Flashcard" was clicked, also generate cards
     if (info.menuItemId === 'save-as-flashcard') {
-      await fetch(`${settings.apiUrl}/sources/${source.id}/generate-cards`, {
+      const genResponse = await fetch(`${settings.apiUrl}/sources/${source.id}/generate-cards`, {
         method: 'POST',
         headers: {
           'X-API-Key': settings.apiKey
         }
       });
+      if (!genResponse.ok) {
+        const hint = genResponse.status === 503 ? ' — is Ollama running?' : '';
+        chrome.action.setBadgeText({ text: '!' });
+        chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
+        chrome.tabs.sendMessage(tab.id, {
+          type: 'SAVE_ERROR',
+          error: `Card generation failed: ${genResponse.status}${hint}`
+        });
+        setTimeout(() => chrome.action.setBadgeText({ text: '' }), 2000);
+        return;
+      }
     }
 
     // Show success notification
@@ -109,6 +140,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'TEST_CONNECTION') {
     testConnection(message.apiUrl, message.apiKey).then(sendResponse);
     return true;
+  }
+
+  if (message.type === 'CREATE_CARD') {
+    chrome.storage.sync.get(['apiUrl', 'apiKey']).then(async (settings) => {
+      if (!settings.apiUrl || !settings.apiKey) {
+        sendResponse({ success: false, error: 'Please configure Note Taker+ settings (click the extension icon)' });
+        return;
+      }
+      try {
+        const response = await fetch(`${settings.apiUrl}/cards`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': settings.apiKey
+          },
+          body: JSON.stringify({ front: message.front, back: message.back, hint: message.hint, tags: [] })
+        });
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        sendResponse({ success: true });
+      } catch (error) {
+        sendResponse({ success: false, error: error.message });
+      }
+    });
+    return true; // keep channel open for async response
   }
 });
 

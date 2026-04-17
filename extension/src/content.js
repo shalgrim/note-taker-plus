@@ -58,9 +58,147 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'SAVE_ERROR') {
     showToast(`Error: ${message.error}`, 'error');
   }
+
+  if (message.type === 'SHOW_CARD_DIALOG') {
+    showCardDialog(message.text || '', message.url || '', message.title || '');
+  }
 });
 
-// Optional: Add keyboard shortcut for quick save
+// --- Card creation dialog ---
+
+function showCardDialog(text, url, title) {
+  if (document.getElementById('notetaker-dialog-overlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'notetaker-dialog-overlay';
+
+  const dialog = document.createElement('div');
+  dialog.id = 'notetaker-dialog';
+
+  const heading = document.createElement('h3');
+  heading.className = 'notetaker-dialog-title';
+  heading.textContent = 'Create Flashcard';
+  dialog.appendChild(heading);
+
+  if (title || url) {
+    const source = document.createElement('p');
+    source.className = 'notetaker-dialog-source';
+    source.textContent = title || url;
+    dialog.appendChild(source);
+  }
+
+  dialog.appendChild(buildField('Question', 'notetaker-q', 'textarea'));
+  dialog.appendChild(buildField('Answer', 'notetaker-a', 'textarea', true));
+  dialog.appendChild(buildField('Hint (optional)', 'notetaker-hint', 'input'));
+
+  const errorEl = document.createElement('div');
+  errorEl.id = 'notetaker-error';
+  errorEl.className = 'notetaker-error';
+  dialog.appendChild(errorEl);
+
+  const actions = document.createElement('div');
+  actions.className = 'notetaker-dialog-actions';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'notetaker-btn-secondary';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', closeDialog);
+
+  const submitBtn = document.createElement('button');
+  submitBtn.id = 'notetaker-submit';
+  submitBtn.className = 'notetaker-btn-primary';
+  submitBtn.textContent = 'Create Card';
+  submitBtn.addEventListener('click', submitCard);
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(submitBtn);
+  dialog.appendChild(actions);
+
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+
+  // Pre-fill Q, focus A if text provided, otherwise focus Q
+  const qEl = document.getElementById('notetaker-q');
+  qEl.value = text;
+  setTimeout(() => {
+    (text ? document.getElementById('notetaker-a') : qEl).focus();
+  }, 50);
+
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeDialog(); });
+  document.addEventListener('keydown', handleDialogKey);
+}
+
+function buildField(labelText, inputId, tag, required = false) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'notetaker-dialog-field';
+
+  const label = document.createElement('label');
+  label.textContent = labelText;
+  label.htmlFor = inputId;
+
+  const input = document.createElement(tag);
+  input.id = inputId;
+  if (tag === 'textarea') input.rows = 3;
+
+  wrapper.appendChild(label);
+  wrapper.appendChild(input);
+  return wrapper;
+}
+
+function handleDialogKey(e) {
+  if (e.key === 'Escape') closeDialog();
+}
+
+function closeDialog() {
+  const overlay = document.getElementById('notetaker-dialog-overlay');
+  if (overlay) overlay.remove();
+  document.removeEventListener('keydown', handleDialogKey);
+}
+
+function setDialogError(msg) {
+  const el = document.getElementById('notetaker-error');
+  if (el) el.textContent = msg;
+}
+
+function submitCard() {
+  const q = document.getElementById('notetaker-q').value.trim();
+  const a = document.getElementById('notetaker-a').value.trim();
+  const hint = document.getElementById('notetaker-hint').value.trim();
+
+  if (!q) { setDialogError('Question is required'); return; }
+  if (!a) { setDialogError('Answer is required'); return; }
+
+  const submitBtn = document.getElementById('notetaker-submit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Creating...';
+
+  // Delegate fetch to background script to avoid content-script CORS restrictions
+  chrome.runtime.sendMessage(
+    { type: 'CREATE_CARD', front: q, back: a, hint: hint || null },
+    (response) => {
+      if (response.success) {
+        closeDialog();
+        showToast('Card created!', 'success');
+      } else {
+        setDialogError(response.error);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Card';
+      }
+    }
+  );
+}
+
+// Ctrl/Cmd + Shift + K to open Create Card dialog
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'k') {
+    if (document.getElementById('notetaker-dialog-overlay')) return;
+    e.preventDefault();
+    const selection = window.getSelection().toString().trim();
+    showCardDialog(selection, window.location.href, document.title);
+  }
+});
+
+// Ctrl/Cmd + Shift + S to save selection as source
 document.addEventListener('keydown', async (e) => {
   // Ctrl/Cmd + Shift + S to save selection
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 's') {

@@ -3,3 +3,127 @@
 #notetaker-toast {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
+
+/* Card creation dialog */
+
+#notetaker-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+#notetaker-dialog {
+  background: #1f2937;
+  border: 1px solid #374151;
+  border-radius: 12px;
+  padding: 24px;
+  width: 480px;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  z-index: 2147483647;
+}
+
+.notetaker-dialog-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #f9fafb;
+}
+
+.notetaker-dialog-source {
+  margin: 0 0 16px;
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notetaker-dialog-field {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notetaker-dialog-field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #d1d5db;
+}
+
+.notetaker-dialog-field textarea,
+.notetaker-dialog-field input[type="text"] {
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  color: #f9fafb;
+  font-family: inherit;
+  font-size: 14px;
+  padding: 8px 10px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.notetaker-dialog-field textarea:focus,
+.notetaker-dialog-field input[type="text"]:focus {
+  border-color: #3b82f6;
+}
+
+.notetaker-error {
+  color: #f87171;
+  font-size: 13px;
+  min-height: 18px;
+  margin-bottom: 10px;
+}
+
+.notetaker-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.notetaker-btn-secondary,
+.notetaker-btn-primary {
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: background 0.15s;
+}
+
+.notetaker-btn-secondary {
+  background: #374151;
+  color: #d1d5db;
+}
+
+.notetaker-btn-secondary:hover {
+  background: #4b5563;
+}
+
+.notetaker-btn-primary {
+  background: #2563eb;
+  color: #fff;
+}
+
+.notetaker-btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.notetaker-btn-primary:disabled {
+  background: #1e3a5f;
+  cursor: not-allowed;
+  color: #6b7280;
+}
