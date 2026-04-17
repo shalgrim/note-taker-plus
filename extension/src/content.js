@@ -90,6 +90,7 @@ function showCardDialog(text, url, title) {
   dialog.appendChild(buildField('Question', 'notetaker-q', 'textarea'));
   dialog.appendChild(buildField('Answer', 'notetaker-a', 'textarea', true));
   dialog.appendChild(buildField('Hint (optional)', 'notetaker-hint', 'input'));
+  dialog.appendChild(buildField('Tags (optional, comma-separated)', 'notetaker-tags', 'input'));
 
   const errorEl = document.createElement('div');
   errorEl.id = 'notetaker-error';
@@ -164,6 +165,8 @@ function submitCard() {
   const q = document.getElementById('notetaker-q').value.trim();
   const a = document.getElementById('notetaker-a').value.trim();
   const hint = document.getElementById('notetaker-hint').value.trim();
+  const tags = document.getElementById('notetaker-tags').value
+    .split(',').map(t => t.trim()).filter(Boolean);
 
   if (!q) { setDialogError('Question is required'); return; }
   if (!a) { setDialogError('Answer is required'); return; }
@@ -174,7 +177,7 @@ function submitCard() {
 
   // Delegate fetch to background script to avoid content-script CORS restrictions
   chrome.runtime.sendMessage(
-    { type: 'CREATE_CARD', front: q, back: a, hint: hint || null },
+    { type: 'CREATE_CARD', front: q, back: a, hint: hint || null, tags },
     (response) => {
       if (response.success) {
         closeDialog();
@@ -188,54 +191,44 @@ function submitCard() {
   );
 }
 
-// Ctrl/Cmd + Shift + K to open Create Card dialog
+// Cmd/Ctrl+Shift+S — Save to Note Taker+ (source only)
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 's') {
+    const selection = window.getSelection().toString().trim();
+    if (!selection) return;
+    e.preventDefault();
+    chrome.runtime.sendMessage(
+      { type: 'SAVE_SOURCE', text: selection, url: window.location.href, title: document.title },
+      (response) => {
+        if (response.success) showToast('Saved to Note Taker+', 'success');
+        else showToast(`Error: ${response.error}`, 'error');
+      }
+    );
+  }
+});
+
+// Cmd/Ctrl+Shift+F — Create Flashcard from Selection (source + generate cards)
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'f') {
+    const selection = window.getSelection().toString().trim();
+    if (!selection) return;
+    e.preventDefault();
+    chrome.runtime.sendMessage(
+      { type: 'SAVE_SOURCE', text: selection, url: window.location.href, title: document.title, generateCards: true },
+      (response) => {
+        if (response.success) showToast('Saved! Card generation started.', 'success');
+        else showToast(`Error: ${response.error}`, 'error');
+      }
+    );
+  }
+});
+
+// Cmd/Ctrl+Shift+K — Open Create Card dialog
 document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'k') {
     if (document.getElementById('notetaker-dialog-overlay')) return;
     e.preventDefault();
     const selection = window.getSelection().toString().trim();
     showCardDialog(selection, window.location.href, document.title);
-  }
-});
-
-// Ctrl/Cmd + Shift + S to save selection as source
-document.addEventListener('keydown', async (e) => {
-  // Ctrl/Cmd + Shift + S to save selection
-  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 's') {
-    const selection = window.getSelection().toString().trim();
-    if (selection) {
-      e.preventDefault();
-
-      const settings = await chrome.storage.sync.get(['apiUrl', 'apiKey']);
-      if (!settings.apiUrl || !settings.apiKey) {
-        showToast('Please configure Note Taker+ extension', 'error');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${settings.apiUrl}/sources`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': settings.apiKey
-          },
-          body: JSON.stringify({
-            text: selection,
-            source_type: 'chrome_extension',
-            source_url: window.location.href,
-            source_title: document.title,
-            tags: []
-          })
-        });
-
-        if (response.ok) {
-          showToast('Saved to Note Taker+', 'success');
-        } else {
-          throw new Error(`API error: ${response.status}`);
-        }
-      } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
-      }
-    }
   }
 });

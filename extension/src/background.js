@@ -1,31 +1,63 @@
 // Background service worker for Note Taker Plus extension
 
-// Create context menu on install
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
-    id: 'save-to-notetaker',
-    title: 'Save to Note Taker+',
-    contexts: ['selection']
-  });
+  const isMac = /Mac|iPhone|iPod|iPad/.test(navigator.userAgent);
+  const mod = isMac ? '⌘⇧' : 'Ctrl+Shift+';
 
-  chrome.contextMenus.create({
-    id: 'save-as-flashcard',
-    title: 'Create Flashcard from Selection',
-    contexts: ['selection']
-  });
-
-  chrome.contextMenus.create({
-    id: 'create-card-dialog',
-    title: 'Create Card...',
-    contexts: ['selection']
+  chrome.contextMenus.removeAll(() => {
+    chrome.contextMenus.create({
+      id: 'save-to-notetaker',
+      title: `Save to Note Taker+ (${mod}S)`,
+      contexts: ['selection']
+    });
+    chrome.contextMenus.create({
+      id: 'save-as-flashcard',
+      title: `Create Flashcard from Selection (${mod}F)`,
+      contexts: ['selection']
+    });
+    chrome.contextMenus.create({
+      id: 'create-card-dialog',
+      title: `Create Card... (${mod}K)`,
+      contexts: ['selection']
+    });
   });
 });
+
+// Save selection as a source, optionally triggering card generation
+async function saveAsSource(text, url, title, generateCards = false) {
+  const settings = await chrome.storage.sync.get(['apiUrl', 'apiKey']);
+  if (!settings.apiUrl || !settings.apiKey) {
+    return { success: false, error: 'Please configure Note Taker+ settings (click the extension icon)' };
+  }
+  try {
+    const response = await fetch(`${settings.apiUrl}/sources`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': settings.apiKey },
+      body: JSON.stringify({ text, source_type: 'chrome_extension', source_url: url, source_title: title, tags: [] })
+    });
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const source = await response.json();
+
+    if (generateCards) {
+      const genResponse = await fetch(`${settings.apiUrl}/sources/${source.id}/generate-cards`, {
+        method: 'POST',
+        headers: { 'X-API-Key': settings.apiKey }
+      });
+      if (!genResponse.ok) {
+        const hint = genResponse.status === 503 ? ' — is Ollama running?' : '';
+        return { success: false, error: `Card generation failed: ${genResponse.status}${hint}` };
+      }
+    }
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
 
 // Handle context menu clicks
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!info.selectionText) return;
 
-  // Dialog flow: send to content script immediately, settings checked there
   if (info.menuItemId === 'create-card-dialog') {
     chrome.tabs.sendMessage(tab.id, {
       type: 'SHOW_CARD_DIALOG',
@@ -36,102 +68,30 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     return;
   }
 
-  const settings = await chrome.storage.sync.get(['apiUrl', 'apiKey']);
+  const generateCards = info.menuItemId === 'save-as-flashcard';
+  const result = await saveAsSource(info.selectionText, tab.url, tab.title, generateCards);
 
-  if (!settings.apiUrl || !settings.apiKey) {
-    chrome.action.setBadgeText({ text: '!' });
-    chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
-    chrome.tabs.sendMessage(tab.id, {
-      type: 'SAVE_ERROR',
-      error: 'Please configure Note Taker+ settings (click the extension icon)'
-    });
-    return;
-  }
-
-  const sourceData = {
-    text: info.selectionText,
-    source_type: 'chrome_extension',
-    source_url: tab.url,
-    source_title: tab.title,
-    tags: []
-  };
-
-  try {
-    const response = await fetch(`${settings.apiUrl}/sources`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': settings.apiKey
-      },
-      body: JSON.stringify(sourceData)
-    });
-
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
-    }
-
-    const source = await response.json();
-
-    // If "Create Flashcard" was clicked, also generate cards
-    if (info.menuItemId === 'save-as-flashcard') {
-      const genResponse = await fetch(`${settings.apiUrl}/sources/${source.id}/generate-cards`, {
-        method: 'POST',
-        headers: {
-          'X-API-Key': settings.apiKey
-        }
-      });
-      if (!genResponse.ok) {
-        const hint = genResponse.status === 503 ? ' — is Ollama running?' : '';
-        chrome.action.setBadgeText({ text: '!' });
-        chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
-        chrome.tabs.sendMessage(tab.id, {
-          type: 'SAVE_ERROR',
-          error: `Card generation failed: ${genResponse.status}${hint}`
-        });
-        setTimeout(() => chrome.action.setBadgeText({ text: '' }), 2000);
-        return;
-      }
-    }
-
-    // Show success notification
+  if (result.success) {
     chrome.action.setBadgeText({ text: '✓' });
     chrome.action.setBadgeBackgroundColor({ color: '#22c55e' });
-
-    // Send success message to content script
-    chrome.tabs.sendMessage(tab.id, {
-      type: 'SAVE_SUCCESS',
-      text: info.selectionText.substring(0, 50) + '...'
-    });
-
-    // Clear badge after 2 seconds
-    setTimeout(() => {
-      chrome.action.setBadgeText({ text: '' });
-    }, 2000);
-
-  } catch (error) {
-    console.error('Failed to save highlight:', error);
+    chrome.tabs.sendMessage(tab.id, { type: 'SAVE_SUCCESS' });
+  } else {
     chrome.action.setBadgeText({ text: '!' });
     chrome.action.setBadgeBackgroundColor({ color: '#ef4444' });
-
-    chrome.tabs.sendMessage(tab.id, {
-      type: 'SAVE_ERROR',
-      error: error.message
-    });
+    chrome.tabs.sendMessage(tab.id, { type: 'SAVE_ERROR', error: result.error });
   }
+  setTimeout(() => chrome.action.setBadgeText({ text: '' }), 2000);
 });
 
 // Listen for messages from popup or content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === 'GET_SETTINGS') {
     chrome.storage.sync.get(['apiUrl', 'apiKey']).then(sendResponse);
-    return true; // Keep channel open for async response
+    return true;
   }
 
   if (message.type === 'SAVE_SETTINGS') {
-    chrome.storage.sync.set({
-      apiUrl: message.apiUrl,
-      apiKey: message.apiKey
-    }).then(() => {
+    chrome.storage.sync.set({ apiUrl: message.apiUrl, apiKey: message.apiKey }).then(() => {
       sendResponse({ success: true });
     });
     return true;
@@ -139,6 +99,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === 'TEST_CONNECTION') {
     testConnection(message.apiUrl, message.apiKey).then(sendResponse);
+    return true;
+  }
+
+  if (message.type === 'SAVE_SOURCE') {
+    saveAsSource(message.text, message.url, message.title, message.generateCards || false)
+      .then(sendResponse);
     return true;
   }
 
@@ -151,11 +117,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       try {
         const response = await fetch(`${settings.apiUrl}/cards`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-API-Key': settings.apiKey
-          },
-          body: JSON.stringify({ front: message.front, back: message.back, hint: message.hint, tags: [] })
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': settings.apiKey },
+          body: JSON.stringify({ front: message.front, back: message.back, hint: message.hint, tags: message.tags || [] })
         });
         if (!response.ok) throw new Error(`API error: ${response.status}`);
         sendResponse({ success: true });
@@ -163,23 +126,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: false, error: error.message });
       }
     });
-    return true; // keep channel open for async response
+    return true;
   }
 });
 
 async function testConnection(apiUrl, apiKey) {
   try {
-    const response = await fetch(`${apiUrl}/health`, {
-      headers: {
-        'X-API-Key': apiKey
-      }
-    });
-
-    if (response.ok) {
-      return { success: true, message: 'Connected successfully' };
-    } else {
-      return { success: false, message: `Server returned ${response.status}` };
-    }
+    const response = await fetch(`${apiUrl}/health`, { headers: { 'X-API-Key': apiKey } });
+    if (response.ok) return { success: true, message: 'Connected successfully' };
+    return { success: false, message: `Server returned ${response.status}` };
   } catch (error) {
     return { success: false, message: error.message };
   }
